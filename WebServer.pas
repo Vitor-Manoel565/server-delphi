@@ -1,34 +1,32 @@
-program WebServer;
-
 {$mode objfpc}{$H+}
 
 uses
-  SysUtils, Classes, fphttpserver, sqldb, pqconnection;
+  SysUtils, Classes, fphttpserver;
 
 type
   TMyHTTPServer = class(TFPHTTPServer)
     procedure RequestHandler(Sender: TObject; var ARequest: TFPHTTPConnectionRequest; var AResponse: TFPHTTPConnectionResponse);
     procedure HandleTesteRequest(AResponse: TFPHTTPConnectionResponse);
-    procedure HandleTableRequest(AResponse: TFPHTTPConnectionResponse);
+    procedure HandleFileRequest(AResponse: TFPHTTPConnectionResponse);
   end;
 
 var
   MyHTTPServer: TMyHTTPServer;
-  DBConnection: TPQConnection;
-  SQLTransaction: TSQLTransaction;
+  arquivo: TextFile;
+  texto: string;
 
 procedure TMyHTTPServer.RequestHandler(Sender: TObject; var ARequest: TFPHTTPConnectionRequest; var AResponse: TFPHTTPConnectionResponse);
 begin
-  if ARequest.URI = '/usertable' then
-  begin 
-  HandleTableRequest(AResponse);
-  Exit;
+  if ARequest.URI = '/file' then
+  begin
+    HandleFileRequest(AResponse);
+    Exit;
   end;
 
-  if ARequest.URI = '/usertable' then
-  begin 
-  HandleTesteRequest(AResponse);
-  Exit;
+  if ARequest.URI = '/teste' then
+  begin
+    HandleTesteRequest(AResponse);
+    Exit;
   end;
 
   AResponse.Content := 'Hello, world!';
@@ -43,40 +41,36 @@ begin
   AResponse.SendContent;
 end;
 
-procedure TMyHTTPServer.HandleTableRequest(AResponse: TFPHTTPConnectionResponse);
+procedure TMyHTTPServer.HandleFileRequest(AResponse: TFPHTTPConnectionResponse);
+var
+  FileStream: TFileStream;
+  Data: AnsiString;
 begin
-  AResponse.Content := 'id={1516hd6fh156}';
+  // Use TFileStream para ler o arquivo data.txt
+  FileStream := TFileStream.Create('DB/data.txt', fmOpenRead);
+  try
+    SetLength(Data, FileStream.Size);
+    FileStream.Read(Data[1], FileStream.Size);
+  finally
+    FileStream.Free;
+  end;
+
+  AResponse.Content := Data;
   AResponse.Code := 200; // HTTP_OK substituído pelo valor inteiro 200
   AResponse.SendContent;
 end;
+
 begin
-  DBConnection := TPQConnection.Create(nil);
+  MyHTTPServer := TMyHTTPServer.Create(nil);
   try
-    // DBConnection.HostName := 'localhost';
-    // DBConnection.DatabaseName := 'your_database_name';
-    // DBConnection.UserName := 'your_username';
-    // DBConnection.Password := 'your_password';
-    // DBConnection.Params.Add('port=8081');
+    MyHTTPServer.Port := 8080;
+    MyHTTPServer.OnRequest := @MyHTTPServer.RequestHandler;
+    MyHTTPServer.Active := True;
 
-    // SQLTransaction := TSQLTransaction.Create(DBConnection);
-    // DBConnection.Transaction := SQLTransaction;
-
-    // DBConnection.Open;
-
-    MyHTTPServer := TMyHTTPServer.Create(nil);
-    try
-      MyHTTPServer.Port := 8080;
-      MyHTTPServer.OnRequest := @MyHTTPServer.RequestHandler;
-      MyHTTPServer.Active := True;
-
-      writeln('Web server started on http://localhost:8080');
-      writeln('Press [Enter] to quit.');
-      readln;
-    finally
-      MyHTTPServer.Free;
-    end;
-
+    writeln('Web server started on http://localhost:8080');
+    writeln('Press [Enter] to quit.');
+    readln;
   finally
-    DBConnection.Free;
+    MyHTTPServer.Free;
   end;
 end.
