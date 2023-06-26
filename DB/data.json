@@ -1,0 +1,21 @@
+{
+  "rooms": [
+    {
+      "idRoom": "1ee0",
+      "players": [
+        { "idPlayer": "11anonv", "cartela": [1, 2, 3, 4, 5], "name": "vit?o" }
+      ]
+    },
+    {
+      "idRoom": "1ee022",
+      "players": [
+        {
+          "idRoom": "1ee022",
+          "idPlayer": "11anonv",
+          "cartela": [1, 2, 3, 4, 5],
+          "name": "vit�o"
+        }
+      ]
+    }
+  ]
+}
