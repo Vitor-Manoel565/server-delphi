@@ -1,19 +1,27 @@
 {
   "rooms": [
     {
-      "idRoom": "1ee0",
-      "players": [
-        { "idPlayer": "11anonv", "cartela": [1, 2, 3, 4, 5], "name": "vit?o" }
-      ]
+      "idRoom": "",
+      "players": [{ "idRoom": "", "idPlayer": "", "cartela": [], "name": "" }]
     },
     {
-      "idRoom": "1ee022",
+      "idRoom": "01",
       "players": [
         {
-          "idRoom": "1ee022",
-          "idPlayer": "11anonv",
-          "cartela": [1, 2, 3, 4, 5],
-          "name": "vit�o"
+          "idRoom": "01",
+          "idPlayer": "iTqAaITQzSpNlh6eAAGL",
+          "cartela": [
+            70, 77, 92, 7, 65, 26, 29, 76, 69, 8, 73, 45, 85, 30, 91, 57, 14, 98
+          ],
+          "name": "teste"
+        },
+        {
+          "idRoom": "01",
+          "idPlayer": "0PCVv9QHd_NdV241AAGP",
+          "cartela": [
+            19, 96, 65, 72, 89, 1, 30, 58, 74, 36, 50, 8, 51, 24, 28, 57
+          ],
+          "name": "bobinho"
         }
       ]
     }

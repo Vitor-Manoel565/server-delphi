@@ -7,8 +7,9 @@ type
   TMyHTTPServer = class(TFPHTTPServer)
     procedure RequestHandler(Sender: TObject; var ARequest: TFPHTTPConnectionRequest; var AResponse: TFPHTTPConnectionResponse);
     procedure HandleTesteRequest(AResponse: TFPHTTPConnectionResponse);
-    procedure HandleFileRequest(AResponse: TFPHTTPConnectionResponse);
+    procedure HandleFileRequest(ARequest: TFPHTTPConnectionRequest; AResponse: TFPHTTPConnectionResponse);
     procedure HandleWriteRequest(ARequest: TFPHTTPConnectionRequest; AResponse: TFPHTTPConnectionResponse);
+    procedure SetCORSHeaders(AResponse: TFPHTTPConnectionResponse);
   end;
 
 var
@@ -17,9 +18,22 @@ var
 
 procedure TMyHTTPServer.RequestHandler(Sender: TObject; var ARequest: TFPHTTPConnectionRequest; var AResponse: TFPHTTPConnectionResponse);
 begin
+  writeln('Recebendo requisição: ' + ARequest.URI);
+
+  // Adiciona os cabeçalhos CORS a todos os endpoints
+  SetCORSHeaders(AResponse);
+
+  // Se a requisição for do tipo OPTIONS, responda apenas com os cabeçalhos CORS
+  if ARequest.Method = 'OPTIONS' then
+  begin
+    AResponse.Code := 204;
+    AResponse.SendContent;
+    Exit;
+  end;
+
   if ARequest.URI = '/file' then
   begin
-    HandleFileRequest(AResponse);
+    HandleFileRequest(ARequest, AResponse);
     Exit;
   end;
 
@@ -40,21 +54,35 @@ begin
   AResponse.SendContent;
 end;
 
+procedure TMyHTTPServer.SetCORSHeaders(AResponse: TFPHTTPConnectionResponse);
+begin
+  AResponse.SetCustomHeader('Access-Control-Allow-Origin', '*');
+  AResponse.SetCustomHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  AResponse.SetCustomHeader('Access-Control-Allow-Headers', 'Content-Type');
+end;
+
 procedure TMyHTTPServer.HandleTesteRequest(AResponse: TFPHTTPConnectionResponse);
 begin
+  AResponse.ContentType := 'text/plain; charset=utf-8';
   AResponse.Content := 'Rota "teste" acessada com sucesso!';
   AResponse.Code := 200;
   AResponse.SendContent;
 end;
 
-procedure TMyHTTPServer.HandleFileRequest(AResponse: TFPHTTPConnectionResponse);
+procedure TMyHTTPServer.HandleFileRequest(ARequest: TFPHTTPConnectionRequest; AResponse: TFPHTTPConnectionResponse);
 var
+  FileName: String;
   FileStream: TFileStream;
   JSONData: TJSONData;
 begin
-  FileStream := TFileStream.Create('DB/data.json', fmOpenRead);
+  FileName := ARequest.QueryFields.Values['filename'];
+  if FileName = '' then
+    FileName := 'data.json';
+
+  FileStream := TFileStream.Create('DB/' + FileName, fmOpenRead);
   try
     JSONData := GetJSON(FileStream);
+    AResponse.ContentType := 'application/json; charset=utf-8';
     AResponse.Content := JSONData.FormatJSON;
     AResponse.Code := 200;
     AResponse.SendContent;
@@ -68,7 +96,7 @@ var
   ReceivedData: String;
   FileStream: TFileStream;
 begin
-  if ARequest.Method = 'POST' then
+  if (ARequest.Method = 'POST') or (ARequest.Method = 'PUT') then
   begin
     ReceivedData := ARequest.Content;
 
@@ -80,12 +108,14 @@ begin
       FileStream.Free;
     end;
 
+    AResponse.ContentType := 'text/plain; charset=utf-8';
     AResponse.Content := 'Dados JSON escritos com sucesso!';
     AResponse.Code := 200;
     AResponse.SendContent;
   end
   else
   begin
+    AResponse.ContentType := 'text/plain; charset=utf-8';
     AResponse.Content := 'Método inválido!';
     AResponse.Code := 405;
     AResponse.SendContent;
@@ -95,15 +125,14 @@ end;
 begin
   MyHTTPServer := TMyHTTPServer.Create(nil);
   try
+    MyHTTPServer.Address := '0.0.0.0';
     MyHTTPServer.Port := 8080;
     MyHTTPServer.OnRequest := @MyHTTPServer.RequestHandler;
     MyHTTPServer.Active := True;
-
-    writeln('Servidor web iniciado em http://localhost:8080');
-    writeln('Pressione [Enter] para sair.');
+    writeln('Servidor web iniciado na porta ' + IntToStr(MyHTTPServer.Port) + '.');
+    writeln('Pressione [Enter] para encerrar o servidor.');
     readln;
   finally
-    MyHTTPServer.Free;
-    Data.Free;
+
   end;
 end.
